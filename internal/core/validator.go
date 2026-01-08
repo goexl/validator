@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/go-playground/locales/en"
+	"github.com/go-playground/locales/zh"
 	"github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"github.com/goexl/exception"
@@ -13,7 +15,6 @@ import (
 	"github.com/goexl/validator/internal/internal/constant"
 	"github.com/goexl/validator/internal/internal/converter"
 	"github.com/goexl/validator/internal/internal/core"
-	"github.com/goexl/validator/internal/internal/key"
 )
 
 var _ validate.Validator = (*Validator)(nil)
@@ -25,12 +26,13 @@ type Validator struct {
 
 func NewValidator() *Validator {
 	return &Validator{
-		validator: validator.New(),
+		validator:  validator.New(),
+		translator: ut.New(en.New(), zh.New()),
 	}
 }
 
 func (v *Validator) Validate(ctx context.Context, target any) (err error) {
-	if value := ctx.Value(key.ContextTag); value != nil {
+	if value := ctx.Value(constant.ContextTag); value != nil {
 		err = v.validator.Var(target, value.(string))
 	} else {
 		err = v.validator.Struct(target)
@@ -72,7 +74,7 @@ func (v *Validator) translations(
 }
 
 func (v *Validator) detectConverter(ctx context.Context) (language core.Converter) {
-	if value := ctx.Value(key.ContextConverter); value != nil {
+	if value := ctx.Value(constant.ContextConverter); value != nil {
 		language = value.(core.Converter)
 	} else {
 		language = new(converter.Same)
@@ -82,7 +84,7 @@ func (v *Validator) detectConverter(ctx context.Context) (language core.Converte
 }
 
 func (v *Validator) detectLanguage(ctx context.Context) (language string) {
-	if value := ctx.Value(key.ContextAcceptLanguage); value != nil {
+	if value := ctx.Value(constant.ContextAcceptLanguage); value != nil {
 		language = value.(string)
 	} else {
 		language = "zh-CN"
